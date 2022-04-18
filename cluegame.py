@@ -1,5 +1,9 @@
 from dataclasses import dataclass
 from functools import partial
+import event_emitter as events
+
+
+em = events.EventEmitter()
 
 
 class Game:
@@ -26,85 +30,102 @@ class Game:
     def make_observation(self, fact):
         if fact.fact_type == "Pass":
             for c in fact.cardset:
-                self._on_lacks(fact.player, c)
+                self.update_status(fact.player, c, 'lacks')
 
         elif fact.fact_type == "Show":
-            self._on_shown(fact.player, fact.cardset)
+            em.emit('shown', game=self, player=fact.player,
+                    cardset=fact.cardset)
 
         elif fact.fact_type == "Has":
-            self._on_has(fact.player, fact.card)
+            self.update_status(fact.player, fact.card, 'has')
 
-    def _on_lacks(self, player, card):
+    def update_status(self, player, card, status):
         if self.has[(player, card)] == "Maybe":
-            self.has[(player, card)] = "No"
-            self.resolve_at_least_one_holder_rule(card)
-            self.resolve_show_elimination_rule(player)
-            self.resolve_minimum_hand_size_rule(player)
+            em.emit(status, game=self, player=player, card=card)
 
-    def _on_shown(self, player, cardset):
-        self.shown_by[player].append(cardset)
-        self.resolve_show_elimination_rule(player)
-
-    def _on_has(self, player, card):
-        if self.has[(player, card)] == "Maybe":
-            self.has[(player, card)] = "Yes"
-            self.resolve_at_most_one_holder_rule(player, card)
-            self.resolve_file_has_a_full_set_rule(card.card_type)
-            self.resolve_maximum_hand_size_rule(player)
-
-    def resolve_show_elimination_rule(self, player):
-        for cardset in self.shown_by[player]:
-            only_possible_card = filter_to_singleton(cardset,
-                                                partial(self._definitely_lacks, player))
-            if only_possible_card:
-                self._on_has(player, only_possible_card)
-
-    def resolve_at_least_one_holder_rule(self, card):
-        for player in self.players:
-            if not self._definitely_lacks(player, card):
-                return
-        self.confidential_file.add(card)
-
-    def resolve_at_most_one_holder_rule(self, player, card):
-        if self._definitely_has(player, card):
-            for p in set(self.players) - {player}:
-                self._on_lacks(p, card)
-
-    def resolve_file_has_a_full_set_rule(self, card_type):
-        only_unlocated_card = filter_to_singleton(self.card_list(card_type),
-                                             self._known_to_be_in_a_players_hand)
-        if only_unlocated_card:
-            self.confidential_file.add(only_unlocated_card)
-
-    def resolve_maximum_hand_size_rule(self, player):
-        cards_in_hand = []
-        for c in self.cards:
-            if self._definitely_has(player, c):
-                cards_in_hand.append(c)
-        if len(cards_in_hand) == player.hand_size:
-            for c in set(self.cards) - set(cards_in_hand):
-                self._on_lacks(player, c)
-
-    def resolve_minimum_hand_size_rule(self, player):
-        cards_not_in_hand = []
-        for c in self.cards:
-            if self._definitely_lacks(player, c):
-                cards_not_in_hand.append(c)
-        if len(cards_not_in_hand) == len(self.cards) - player.hand_size:
-            for c in set(self.cards) - set(cards_not_in_hand):
-                self._on_has(player, c)
-
-    def _known_to_be_in_a_players_hand(self, card):
+    def known_to_be_in_a_players_hand(self, card):
         for p in self.players:
-            if self._definitely_has(p, card):
+            if self.definitely_has(p, card):
                 return True
         return False
 
-    def _definitely_has(self, player, card):
+    def definitely_has(self, player, card):
         return self.has[(player, card)] == "Yes"
 
-    def _definitely_lacks(self, player, card):
+    def definitely_lacks(self, player, card):
         return self.has[(player, card)] == "No"
+
+
+@events.on(emitter=em, event='lacks')
+def mark_lack(game, player, card):
+    game.has[(player, card)] = "No"
+
+
+@events.on(emitter=em, event='shown')
+def mark_shown(game, player, cardset):
+    game.shown_by[player].append(cardset)
+
+
+@events.on(emitter=em, event='has')
+def mark_has(game, player, card):
+    game.has[(player, card)] = "Yes"
+
+
+@events.on(emitter=em, event='shown')
+@events.on(emitter=em, event='lacks')
+def resolve_show_elimination_rule(game, player, card=None, cardset=None):
+    for cardset in game.shown_by[player]:
+        only_possible_card = (
+            filter_to_singleton(cardset,
+                                partial(game.definitely_lacks, player)))
+        if only_possible_card:
+            game.update_status(player, only_possible_card, 'has')
+
+
+@events.on(emitter=em, event='lacks')
+def resolve_at_least_one_holder_rule(game, card, player=None):
+    for player in game.players:
+        if not game.definitely_lacks(player, card):
+            return
+    game.confidential_file.add(card)
+
+
+@events.on(emitter=em, event='has')
+def resolve_at_most_one_holder_rule(game, player, card):
+    if game.definitely_has(player, card):
+        for p in set(game.players) - {player}:
+            game.update_status(p, card, 'lacks')
+
+
+@events.on(emitter=em, event='has')
+def resolve_file_has_a_full_set_rule(game, card, player=None):
+    only_unlocated_card = (
+        filter_to_singleton(game.card_list(card.card_type),
+                            game.known_to_be_in_a_players_hand))
+    if only_unlocated_card:
+        game.confidential_file.add(only_unlocated_card)
+
+
+@events.on(emitter=em, event='has')
+def resolve_maximum_hand_size_rule(game, player, card=None):
+    cards_in_hand = []
+    for c in game.cards:
+        if game.definitely_has(player, c):
+            cards_in_hand.append(c)
+    if len(cards_in_hand) == player.hand_size:
+        for c in set(game.cards) - set(cards_in_hand):
+            game.update_status(player, c, 'lacks')
+
+
+@events.on(emitter=em, event='lacks')
+def resolve_minimum_hand_size_rule(game, player, card=None):
+    cards_not_in_hand = []
+    for c in game.cards:
+        if game.definitely_lacks(player, c):
+            cards_not_in_hand.append(c)
+    if len(cards_not_in_hand) == len(game.cards) - player.hand_size:
+        for c in set(game.cards) - set(cards_not_in_hand):
+            game.update_status(player, c, 'has')
 
 
 def filter_to_singleton(iterable, func):
