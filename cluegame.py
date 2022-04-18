@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from functools import partial
 import event_emitter as events
 
 
@@ -21,8 +20,6 @@ class Game:
             self.shown_by[player] = []
 
         self.confidential_file = set()
-
-        self.hand_sizes = {}
 
     def card_list(self, card_type):
         return [card for card in self.cards if card.card_type == card_type]
@@ -75,11 +72,10 @@ def mark_has(game, player, card):
 @events.on(emitter=em, event='lacks')
 def resolve_show_elimination_rule(game, player, card=None, cardset=None):
     for cardset in game.shown_by[player]:
-        only_possible_card = (
-            filter_to_singleton(cardset,
-                                partial(game.definitely_lacks, player)))
-        if only_possible_card:
-            game.update_status(player, only_possible_card, 'has')
+        possible_cards = [c for c in cardset if
+                          not game.definitely_lacks(player, c)]
+        if len(possible_cards) == 1:
+            game.update_status(player, possible_cards.pop(), 'has')
 
 
 @events.on(emitter=em, event='lacks')
@@ -99,41 +95,24 @@ def resolve_at_most_one_holder_rule(game, player, card):
 
 @events.on(emitter=em, event='has')
 def resolve_file_has_a_full_set_rule(game, card, player=None):
-    only_unlocated_card = (
-        filter_to_singleton(game.card_list(card.card_type),
-                            game.known_to_be_in_a_players_hand))
-    if only_unlocated_card:
-        game.confidential_file.add(only_unlocated_card)
+    unlocated_cards = [c for c in game.card_list(card.card_type) if
+                       not game.known_to_be_in_a_players_hand(c)]
+    if len(unlocated_cards) == 1:
+        game.confidential_file.add(unlocated_cards.pop())
 
 
 @events.on(emitter=em, event='has')
 @events.on(emitter=em, event='lacks')
 def resolve_hand_size_rule(game, player, card=None):
-    cards_in_hand = []
-    cards_not_in_hand = []
-    for c in game.cards:
-        if game.definitely_has(player, c):
-            cards_in_hand.append(c)
-        elif game.definitely_lacks(player, c):
-            cards_not_in_hand.append(c)
-    if len(cards_in_hand) == player.hand_size:
-        for c in set(game.cards) - set(cards_in_hand):
+    cards_having = [c for c in game.cards if game.definitely_has(player, c)]
+    cards_lacking = [c for c in game.cards if game.definitely_lacks(player, c)]
+
+    if len(cards_having) == player.hand_size:
+        for c in set(game.cards) - set(cards_having):
             game.update_status(player, c, 'lacks')
-    elif len(cards_not_in_hand) == len(game.cards) - player.hand_size:
-        for c in set(game.cards) - set(cards_not_in_hand):
+    elif len(game.cards) - len(cards_lacking) == player.hand_size:
+        for c in set(game.cards) - set(cards_lacking):
             game.update_status(player, c, 'has')
-
-
-def filter_to_singleton(iterable, func):
-    """Given func, a boolean map on members of iterable --
-    return either the only matching member, or None if not exactly one match.
-    """
-    possibilities = set(iterable.copy())
-    for p in iterable:
-        if func(p):
-            possibilities.remove(p)
-    if len(possibilities) == 1:
-        return possibilities.pop()
 
 
 @dataclass(frozen=True)
