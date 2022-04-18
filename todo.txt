@@ -1,0 +1,10 @@
+Domain model:
+- Handle attempts to input logically inconsistent data: raise exception.
+
+Persistence:
+- Add persistence using SQLAlchemy dependency injection.
+
+Bonus/wish-list domain tasks:
+- Track and distinguish publicly-known from non-public information.
+- Track and make "probable" deductions based on the fact that a player made a certain suggestion (can't glean any definitive info from this).
+- Help recommend the best next suggestion to make to gather the most info possible.
