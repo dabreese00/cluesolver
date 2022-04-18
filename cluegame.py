@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import partial
 
 
 class Game:
@@ -17,6 +18,8 @@ class Game:
 
         self.confidential_file = set()
 
+        self.hand_sizes = {}
+
     def card_list(self, card_type):
         return [card for card in self.cards if card.card_type == card_type]
 
@@ -32,30 +35,70 @@ class Game:
             self._on_has(fact.player, fact.card)
 
     def _on_lacks(self, player, card):
-        self.has[(player, card)] = "No"
-        self.resolve_at_least_one_holder_rule(card)
+        if self.has[(player, card)] == "Maybe":
+            self.has[(player, card)] = "No"
+            self.resolve_at_least_one_holder_rule(card)
+            self.resolve_show_elimination_rule(player)
+            self.resolve_minimum_hand_size_rule(player)
 
     def _on_shown(self, player, cardset):
         self.shown_by[player].append(cardset)
         self.resolve_show_elimination_rule(player)
 
     def _on_has(self, player, card):
-        self.has[(player, card)] = "Yes"
+        if self.has[(player, card)] == "Maybe":
+            self.has[(player, card)] = "Yes"
+            self.resolve_at_most_one_holder_rule(player, card)
+            self.resolve_file_has_a_full_set_rule(card.card_type)
+            self.resolve_maximum_hand_size_rule(player)
 
     def resolve_show_elimination_rule(self, player):
         for cardset in self.shown_by[player]:
-            possible_cards = set(cardset)
-            for c in cardset:
-                if self._definitely_lacks(player, c):
-                    possible_cards.remove(c)
-            if len(possible_cards) == 1:
-                self._on_has(player, *possible_cards)
+            only_possible_card = filter_to_singleton(cardset,
+                                                partial(self._definitely_lacks, player))
+            if only_possible_card:
+                self._on_has(player, only_possible_card)
 
     def resolve_at_least_one_holder_rule(self, card):
         for player in self.players:
             if not self._definitely_lacks(player, card):
                 return
         self.confidential_file.add(card)
+
+    def resolve_at_most_one_holder_rule(self, player, card):
+        if self._definitely_has(player, card):
+            for p in set(self.players) - {player}:
+                self._on_lacks(p, card)
+
+    def resolve_file_has_a_full_set_rule(self, card_type):
+        only_unlocated_card = filter_to_singleton(self.card_list(card_type),
+                                             self._known_to_be_in_a_players_hand)
+        if only_unlocated_card:
+            self.confidential_file.add(only_unlocated_card)
+
+    def resolve_maximum_hand_size_rule(self, player):
+        cards_in_hand = []
+        for c in self.cards:
+            if self._definitely_has(player, c):
+                cards_in_hand.append(c)
+        if len(cards_in_hand) == player.hand_size:
+            for c in set(self.cards) - set(cards_in_hand):
+                self._on_lacks(player, c)
+
+    def resolve_minimum_hand_size_rule(self, player):
+        cards_not_in_hand = []
+        for c in self.cards:
+            if self._definitely_lacks(player, c):
+                cards_not_in_hand.append(c)
+        if len(cards_not_in_hand) == len(self.cards) - player.hand_size:
+            for c in set(self.cards) - set(cards_not_in_hand):
+                self._on_has(player, c)
+
+    def _known_to_be_in_a_players_hand(self, card):
+        for p in self.players:
+            if self._definitely_has(p, card):
+                return True
+        return False
 
     def _definitely_has(self, player, card):
         return self.has[(player, card)] == "Yes"
@@ -64,10 +107,28 @@ class Game:
         return self.has[(player, card)] == "No"
 
 
+def filter_to_singleton(iterable, func):
+    """Given func, a boolean map on members of iterable --
+    return either the only matching member, or None if not exactly one match.
+    """
+    possibilities = set(iterable.copy())
+    for p in iterable:
+        if func(p):
+            possibilities.remove(p)
+    if len(possibilities) == 1:
+        return possibilities.pop()
+
+
 @dataclass(frozen=True)
 class Card:
     name: str
     card_type: str
+
+
+@dataclass(frozen=True)
+class Player:
+    name: str
+    hand_size: int
 
 
 @dataclass(frozen=True)

@@ -29,6 +29,8 @@ Based on these events and the stated rules, the clue solver application should r
 
 List of rules and observations used to make deductions:
 
+Observed events:
+
 - "Observed Pass": When we observe that Player Y passes on suggested card set Q, we mark that Card is not in Player Y's hand, for each Card in Card Set Q.
     - Triggers: External.
     - Results: Player does not have card.
@@ -40,6 +42,8 @@ List of rules and observations used to make deductions:
 - "Observed show me": Whenever we observe or mark that Card A is in Player X's hand, we mark this, Check and mark the Only-One-Holder rule, Check and mark the Hand-Maximum rule, Check and mark the File-Has-A-Full-Set rule.
     - Triggers: External
     - Results: Player has card.
+
+Deduced/triggered facts:
 
 - "Show-Elimination Rule": If Player Y has shown card set Q, but is known to not have two of the cards in card set Q, then Player Y has the final card in card set Q.
     - Triggers: Player does not have card OR New Show.
