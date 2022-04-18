@@ -16,20 +16,9 @@ A player may *pass* on a suggested card set, in which case that player has none 
 
 A player may *show* on a suggested card set, in which case that player has at least one of the cards in the suggested card set.
 
+The program should gather and deduce information based on observed events and the rules/triggered deductions described.  In particular, we want to deduce the contents of the confidential file.
 
-I directly observe the following types of events/raw data:
-
-- Player X exists and has n cards.
-- Card A is in Player X's hand.
-- [Bonus] Player X suggests card set Q.
-- Player Y passes on suggested card set Q.
-- Player Z shows on suggested card set Q.
-
-Based on these events and the stated rules, the clue solver application should record all known info about where each card is or is not.  The goal is to identify which card set is in the confidential file.
-
-List of rules and observations used to make deductions:
-
-Observed events:
+## Observed events i.e. externally-triggered
 
 - "Observed Pass": When we observe that Player Y passes on suggested card set Q, we mark that Card is not in Player Y's hand, for each Card in Card Set Q.
     - Triggers: External.
@@ -43,7 +32,7 @@ Observed events:
     - Triggers: External
     - Results: Player has card.
 
-Deduced/triggered facts:
+## Deduced facts i.e. triggered by new knowledge gained, internal or external
 
 - "Show-Elimination Rule": If Player Y has shown card set Q, but is known to not have two of the cards in card set Q, then Player Y has the final card in card set Q.
     - Triggers: Player does not have card OR New Show.
