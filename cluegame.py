@@ -107,23 +107,19 @@ def resolve_file_has_a_full_set_rule(game, card, player=None):
 
 
 @events.on(emitter=em, event='has')
-def resolve_maximum_hand_size_rule(game, player, card=None):
+@events.on(emitter=em, event='lacks')
+def resolve_hand_size_rule(game, player, card=None):
     cards_in_hand = []
+    cards_not_in_hand = []
     for c in game.cards:
         if game.definitely_has(player, c):
             cards_in_hand.append(c)
+        elif game.definitely_lacks(player, c):
+            cards_not_in_hand.append(c)
     if len(cards_in_hand) == player.hand_size:
         for c in set(game.cards) - set(cards_in_hand):
             game.update_status(player, c, 'lacks')
-
-
-@events.on(emitter=em, event='lacks')
-def resolve_minimum_hand_size_rule(game, player, card=None):
-    cards_not_in_hand = []
-    for c in game.cards:
-        if game.definitely_lacks(player, c):
-            cards_not_in_hand.append(c)
-    if len(cards_not_in_hand) == len(game.cards) - player.hand_size:
+    elif len(cards_not_in_hand) == len(game.cards) - player.hand_size:
         for c in set(game.cards) - set(cards_not_in_hand):
             game.update_status(player, c, 'has')
 
