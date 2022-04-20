@@ -3,168 +3,199 @@ import pytest
 
 
 @pytest.fixture
-def single_cardset_game():
-    cards = [Card("Joe", "Person"), Card("Rope", "Weapon"),
-             Card("Kitchen", "Room")]
-    players = [Player("Bob", 3)]
-    return Game(cards, players)
+def person_card():
+    return Card("Joe", "Person")
 
 
 @pytest.fixture
-def two_person_cards():
-    return [Card("Joe", "Person"), Card("Jim", "Person")]
+def weapon_card():
+    return Card("Rope", "Weapon")
 
 
 @pytest.fixture
-def weapon_card_and_room_card():
-    return [Card("Rope", "Weapon"), Card("Kitchen", "Room")]
+def room_card():
+    return Card("Kitchen", "Room")
 
 
 @pytest.fixture
-def four_cards(two_person_cards, weapon_card_and_room_card):
-    return two_person_cards + weapon_card_and_room_card
+def basic_card_list():
+    return [
+        Card("Joe", "Person"),
+        Card("Jim", "Person"),
+        Card("Janet", "Person"),
+        Card("Jamie", "Person"),
+        Card("Rope", "Weapon"),
+        Card("Knife", "Weapon"),
+        Card("Lead Pipe", "Weapon"),
+        Card("Candlestick", "Weapon"),
+        Card("Kitchen", "Room"),
+        Card("Lounge", "Room"),
+        Card("Study", "Room"),
+        Card("Billiard Room", "Room"),
+    ]
 
 
 @pytest.fixture
-def player():
-    return Player("Bob", 3)
+def two_person_cards(person_card):
+    return [person_card, Card("Jim", "Person")]
 
 
-def test_card_list_filters_by_type():
-    cards = [Card("Joe", "Person"), Card("Rope", "Weapon")]
-    players = []
-    g = Game(cards, players)
+@pytest.fixture
+def basic_player_list():
+    return [
+        Player("Bob", 3),
+        Player("Riccha", 3),
+        Player("Fergie", 3),
+        Player("Khalid", 3),
+    ]
 
-    assert g.card_list("Person") == [Card("Joe", "Person")]
+
+@pytest.fixture
+def single_cardset_game(person_card, weapon_card, room_card, player):
+    return Game([person_card, weapon_card, room_card], [player])
 
 
-def test_observing_a_pass_records_cards_not_held(single_cardset_game):
-    g = single_cardset_game
+@pytest.fixture
+def basic_game(basic_card_list, basic_player_list):
+    return Game(basic_card_list, basic_player_list)
 
+
+def test_card_list_filters_by_type(person_card, weapon_card, room_card):
+    cards = [person_card, weapon_card]
+    g = Game(cards, [])
+
+    assert g.card_list("Person") == [person_card]
+
+
+def test_observing_a_pass_records_cards_not_held(basic_game):
+    g = basic_game
     player = g.players[0]
-    cardset = set(g.cards)
-    obs = PassFact(player=player, cardset=cardset)
-    g.make_observation(obs)
+    cardset = {
+        g.card_list("Person")[0],
+        g.card_list("Weapon")[0],
+        g.card_list("Room")[0],
+    }
+
+    g.make_observation(PassFact(player, cardset))
 
     for card in cardset:
         assert g.has[(player, card)] == "No"
 
 
-def test_observing_a_show_records_cardset_shown_by(single_cardset_game):
-    g = single_cardset_game
-
+def test_observing_a_show_records_cardset_shown_by(basic_game):
+    g = basic_game
     player = g.players[0]
-    cardset = set(g.cards)
-    obs = ShowFact(player, cardset)
-    g.make_observation(obs)
+    cardset = {
+        g.card_list("Person")[0],
+        g.card_list("Weapon")[0],
+        g.card_list("Room")[0],
+    }
+
+    g.make_observation(ShowFact(player, cardset))
 
     assert cardset in g.shown_by[player]
 
 
-def test_observing_a_show_with_two_unheld_cards_marks_final_has(
-        four_cards, player):
-    cards = four_cards
-    player = Player("Bob", 3)
-    g = Game(cards, [player])
+def test_observing_a_show_with_two_unheld_cards_marks_final_has(basic_game):
+    g = basic_game
+    cards = g.cards
+    player = g.players[0]
 
-    pass_obs = PassFact(player, set(cards[:3]))
-    show_obs = ShowFact(player, set(cards[1:]))
-
-    g.make_observation(pass_obs)
-    g.make_observation(show_obs)
+    g.make_observation(PassFact(player, set(cards[:3])))
+    g.make_observation(ShowFact(player, set(cards[1:4])))
 
     assert g.has[(player, cards[3])] == "Yes"
 
 
-def test_observing_a_pass_marks_confidential_file(single_cardset_game):
-    g = single_cardset_game
-
+def test_observing_final_pass_marks_confidential_file(basic_game):
+    g = basic_game
     player = g.players[0]
-    cardset = set(g.cards)
-    obs = PassFact(player, cardset)
-    g.make_observation(obs)
+    cardset = {
+        g.card_list("Person")[0],
+        g.card_list("Weapon")[0],
+        g.card_list("Room")[0],
+    }
 
-    assert set(g.cards) == set(g.confidential_file)
+    for p in set(g.players) - {player}:
+        g.make_observation(PassFact(p, cardset))
+
+    assert set() == set(g.confidential_file)
+
+    g.make_observation(PassFact(player, cardset))
+
+    assert cardset == set(g.confidential_file)
 
 
-def test_observing_show_me_marks_card_held(player):
-    card = Card("Joe", "Person")
-    g = Game([card], [player])
+def test_observing_has_gets_recorded(basic_game):
+    g = basic_game
+    card = g.cards[0]
+    player = g.players[0]
 
-    obs = HasFact(player, card)
-    g.make_observation(obs)
+    g.make_observation(HasFact(player, card))
 
     assert g.has[(player, card)] == "Yes"
 
 
-def test_observing_show_me_marks_card_not_held_by_others():
-    card = Card("Joe", "Person")
-    players = [Player("Bob", 3),
-               Player("Riccha", 3),
-               Player("Fergie", 3)]
-    g = Game([card], players)
+def test_observing_has_marks_card_not_held_by_others(basic_game):
+    g = basic_game
+    card = g.cards[0]
 
-    obs = HasFact(players[0], card)
-    g.make_observation(obs)
+    g.make_observation(HasFact(g.players[0], card))
 
-    for p in players[1:]:
+    for p in g.players[1:]:
         assert g.has[(p, card)] == "No"
 
 
-def test_observing_pass_with_show_and_unheld_card_marks_final_has(
-        four_cards, player):
-    cards = four_cards
-    g = Game(cards, [player])
-
+def test_observing_pass_with_show_and_unheld_card_marks_final_has(basic_game):
+    g = basic_game
+    cards = g.cards[:4]
+    player = g.players[0]
     g.has[(player, cards[0])] = "No"
-    show_obs = ShowFact(player, set(cards[1:]))
-    g.make_observation(show_obs)
+
+    g.make_observation(ShowFact(player, set(cards[1:])))
 
     assert g.has[(player, cards[3])] == "Maybe"
 
-    pass_obs = PassFact(player, set(cards[:3]))
-    g.make_observation(pass_obs)
+    g.make_observation(PassFact(player, set(cards[:3])))
 
     assert g.has[(player, cards[3])] == "Yes"
 
 
 def test_observing_last_has_of_card_type_marks_confidential_file(
-        two_person_cards, weapon_card_and_room_card):
+        two_person_cards):
     player = Player("Bob", 3)
-    g = Game(two_person_cards + weapon_card_and_room_card, [player])
+    g = Game(two_person_cards, [player])
 
-    has_obs = HasFact(player, two_person_cards[0])
-    g.make_observation(has_obs)
+    g.make_observation(HasFact(player, two_person_cards[0]))
 
     assert two_person_cards[1] in g.confidential_file
 
 
-def test_observing_has_at_players_hand_size_marks_remaining_lacks(four_cards):
-    cards = four_cards
-    player = Player("Bob", 2)
-    g = Game(cards, [player])
-    has_obs_first = HasFact(player, cards[0])
-    has_obs_second = HasFact(player, cards[1])
+def test_observing_has_at_players_hand_size_marks_remaining_lacks(basic_game):
+    g = basic_game
+    cards = g.cards
+    player = g.players[0]
 
-    g.make_observation(has_obs_first)
+    g.make_observation(HasFact(player, cards[0]))
+    g.make_observation(HasFact(player, cards[1]))
 
-    assert g.has[(player, cards[2])] == "Maybe"
     assert g.has[(player, cards[3])] == "Maybe"
+    assert g.has[(player, cards[4])] == "Maybe"
 
-    g.make_observation(has_obs_second)
+    g.make_observation(HasFact(player, cards[2]))
 
-    assert g.has[(player, cards[2])] == "No"
     assert g.has[(player, cards[3])] == "No"
+    assert g.has[(player, cards[4])] == "No"
 
 
-def test_observing_lacks_at_players_hand_size_marks_remaining_has(four_cards):
-    cards = four_cards
-    cards.append(Card("Knife", "Weapon"))
-    player = Player("Bob", 2)
-    g = Game(cards, [player])
-    pass_obs = PassFact(player, cards[:3])
+def test_observing_lacks_at_players_hand_size_marks_remaining_has(basic_game):
+    g = basic_game
+    cards = g.cards
+    player = g.players[0]
 
-    g.make_observation(pass_obs)
+    g.make_observation(PassFact(player, cards[:3]))
+    g.make_observation(PassFact(player, cards[3:6]))
+    g.make_observation(PassFact(player, cards[6:9]))
 
-    assert g.has[(player, cards[3])] == "Yes"
-    assert g.has[(player, cards[4])] == "Yes"
+    for c in cards[9:12]:
+        assert g.has[(player, c)] == "Yes"
