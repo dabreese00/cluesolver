@@ -24,17 +24,15 @@ class Game:
     def card_list(self, card_type):
         return [card for card in self.cards if card.card_type == card_type]
 
-    def make_observation(self, fact):
-        if fact.fact_type == "Pass":
-            for c in fact.cardset:
-                self.update_status(fact.player, c, 'lacks')
+    def observe_pass(game, player, cardset):
+        for c in cardset:
+            game.update_status(player, c, 'lacks')
 
-        elif fact.fact_type == "Show":
-            em.emit('shown', game=self, player=fact.player,
-                    cardset=fact.cardset)
+    def observe_shown(game, player, cardset):
+        em.emit('shown', game=game, player=player, cardset=cardset)
 
-        elif fact.fact_type == "Has":
-            self.update_status(fact.player, fact.card, 'has')
+    def observe_has(game, player, card):
+        game.update_status(player, card, 'has')
 
     def update_status(self, player, card, status):
         if self.has[(player, card)] == "Maybe":
@@ -125,24 +123,3 @@ class Card:
 class Player:
     name: str
     hand_size: int
-
-
-@dataclass(frozen=True)
-class PassFact:
-    player: str
-    cardset: set
-    fact_type: str = "Pass"
-
-
-@dataclass(frozen=True)
-class ShowFact:
-    player: str
-    cardset: set
-    fact_type: str = "Show"
-
-
-@dataclass(frozen=True)
-class HasFact:
-    player: str
-    card: Card
-    fact_type: str = "Has"
