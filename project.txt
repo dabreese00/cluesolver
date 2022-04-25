@@ -1,0 +1,12 @@
+Feature roadmap:
+- Initiative: Clue Solver MVP
+  - Epic: CRUD with business rules
+    - Story: I want to be able to record the clue facts I've observed, so I can look them up later.
+    - Story: I want to be able to visualize all the clue facts I've recorded, so I can remember them.
+    - Story: I want to be able to see the logical inferences that can be drawn from the clue facts I've recorded, so I can deduce the answer to the game.
+    - Story: I want to be notified if I try to record a logically impossible clue fact, so that I don't mess up.
+
+Bonus/wish-list features:
+- Track and distinguish publicly-known from non-public information.
+- Track and make "probable" deductions based on the fact that a player made a certain suggestion (can't glean any definitive info from this).
+- Help recommend the best next suggestion to make to gather the most info possible.
