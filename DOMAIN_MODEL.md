@@ -20,40 +20,34 @@ The program should gather and deduce information based on observed events and th
 
 ## Observed events i.e. externally-triggered
 
-- "Observed Pass": When we observe that Player Y passes on suggested card set Q, we mark that Card is not in Player Y's hand, for each Card in Card Set Q.
-    - Triggers: External.
-    - Results: Player does not have card.
+- "Observed Pass": We observe that Player Y passes on suggested card set Q.
 
-- "Observed show you": When we observe that Player X shows on suggested card set Q, we Mark that Card Set Q has been Shown By Player X, Check and mark the Show-Elimination Rule.
-    - Triggers: External.
-    - Results: Player has shown cardset.
+- "Observed show": We observe that Player X shows on suggested card set Q.
 
-- "Observed show me": Whenever we observe or mark that Card A is in Player X's hand, we mark this, Check and mark the Only-One-Holder rule, Check and mark the Hand-Maximum rule, Check and mark the File-Has-A-Full-Set rule.
-    - Triggers: External
-    - Results: Player has card.
+- "Observed has": We observe that Card A is in Player X's hand.
 
 ## Deduced facts i.e. triggered by new knowledge gained, internal or external
 
-- "Show-Elimination Rule": If Player Y has shown card set Q, but is known to not have two of the cards in card set Q, then Player Y has the final card in card set Q.
+- "Show-Elimination Rule": If Player Y has shown card set Q, but is known to not have two of the cards in card set Q, then deduce and mark that Player Y has the final card in card set Q.
     - Triggers: Player does not have card OR New Show.
     - Results: Player has card.
 
-- "File-Has-A-Full-Set rule": If we have now marked locations of all cards of Card A's type but one, then mark the location of the final one: The confidential file.
+- "File-Has-A-Full-Set rule": If we have now marked locations of all but one of the cards of Card A's type, then deduce and mark the location of the final card of this type: The confidential file.
     - Triggers: Player has card.
     - Results: Card is in confidential file.
 
-- "Only-One-Holder Rule": If we know that a card is in a player's hand, it cannot be in any other player's hand or in the confidential file.
+- "Only-One-Holder Rule": If we know that Card A is in Player X's hand, then deduce and mark that it is not in any other player's hand, or in the confidential file.
     - Triggers: Player has card.
     - Results: Player does not have card.
 
-- "At-Least-One-Holder Rule": If we know that card is not in any player's hand, mark it in the one remaining possible location: The confidential file.
+- "At-Least-One-Holder Rule": If we know that card A is not in any player's hand, then deduce and mark that it's in the one remaining possible location: The confidential file.
     - Triggers: Player does not have card.
     - Results: Card is in confidential file.
 
-- "Hand-Minimum Rule": If we have now marked cards not in Player Y's hand equal to the number of cards in the game minus Player Y's hand size, mark the remaining cards in Player Y's hand.
+- "Hand-Minimum Rule": If we have now marked a number of cards not in Player Y's hand equal to the number of cards in the game minus Player Y's hand size, then deduce and mark the remaining cards in Player Y's hand.
     - Triggers: Player does not have card.
     - Results: Player has card.
 
-- "Hand-Maximum Rule": If we have now marked cards in Player X's hand equal to Player X's hand size, mark that all other cards are not in Player X's hand.
+- "Hand-Maximum Rule": If we have now marked a number of cards in Player X's hand equal to Player X's hand size, then deduce and mark that all other cards are not in Player X's hand.
     - Triggers: Player has card.
     - Results: Player does not have card.
