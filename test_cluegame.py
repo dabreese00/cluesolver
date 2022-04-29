@@ -51,11 +51,6 @@ def basic_player_list():
 
 
 @pytest.fixture
-def single_cardset_game(person_card, weapon_card, room_card, player):
-    return Game([person_card, weapon_card, room_card], [player])
-
-
-@pytest.fixture
 def basic_game(basic_card_list, basic_player_list):
     return Game(basic_card_list, basic_player_list)
 
