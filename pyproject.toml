@@ -9,6 +9,7 @@ license = "GPLv3"
 python = "^3.10"
 PyEventEmitter = "^1.0.5"
 Flask = "^2.1.2"
+SQLAlchemy = "^1.4.36"
 
 [tool.poetry.dev-dependencies]
 coverage = "^6.3.2"

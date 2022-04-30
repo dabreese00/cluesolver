@@ -1,5 +1,6 @@
+from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request
-from .db import get_db
+from cluesolver.db import get_db
 
 
 bp = Blueprint('tracker', __name__)
@@ -20,10 +21,10 @@ def games():
         if response is None:
             try:
                 db.execute(
-                    "INSERT INTO game (name) VALUES (?)", (name,)
+                    "INSERT INTO game (name) VALUES (:name)", {'name': name}
                 )
                 db.commit()
-            except db.IntegrityError:
+            except IntegrityError:
                 response = ({'error': f"Game {name} already exists."}, 401)
             else:
                 response = ({'name': name}, 201)
@@ -40,8 +41,8 @@ def game_detail(name):
     db = get_db()
 
     game = db.execute(
-        "SELECT * FROM game WHERE game.name = ?",
-        (name,)
+        "SELECT * FROM game WHERE game.name = :name",
+        {'name': name}
     ).fetchone()
 
     if game is not None:
