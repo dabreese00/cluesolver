@@ -1,10 +1,10 @@
-from .schema import create_tables, drop_tables
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
+
+from cluesolver.orm import create_tables, drop_tables
 
 
 def get_db_engine():

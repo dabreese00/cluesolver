@@ -52,12 +52,12 @@ def basic_player_list():
 
 @pytest.fixture
 def basic_game(basic_card_list, basic_player_list):
-    return Game(basic_card_list, basic_player_list)
+    return Game("Basic game", basic_card_list, basic_player_list)
 
 
 def test_card_list_filters_by_type(person_card, weapon_card, room_card):
     cards = [person_card, weapon_card]
-    g = Game(cards, [])
+    g = Game("g", cards, [])
 
     assert g.card_list("Person") == [person_card]
 
@@ -159,7 +159,7 @@ def test_observing_pass_with_show_and_unheld_card_marks_final_has(basic_game):
 def test_observing_last_has_of_card_type_marks_confidential_file(
         two_person_cards):
     player = Player("Bob", 3)
-    g = Game(two_person_cards, [player])
+    g = Game("g", two_person_cards, [player])
 
     g.observe_has(player, two_person_cards[0])
 
