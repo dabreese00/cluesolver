@@ -10,8 +10,13 @@ cov:
 cov_html:
 	poetry run coverage html
 
-test_int:
+test_int: init_db
 	poetry run pytest cluesolver/tests/integration
 
-test_all:
-	poetry run pytest
+test_all: test test_int
+
+rundev:
+	poetry run flask run
+
+init_db:
+	poetry run flask init-db

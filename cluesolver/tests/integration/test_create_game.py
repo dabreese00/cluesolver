@@ -1,12 +1,7 @@
-import requests
-
-
-BASE_URL = 'http://127.0.0.1:5000'
-
-
-def test_create_game():
+def test_create_game(app, client):
+    games_path = '/games'
     game_dict = {
-        'name': 'Ooga',
+        'name': 'Oogas',
         'players': [
             {
                 'name': 'Marie',
@@ -27,13 +22,14 @@ def test_create_game():
             },
         ],
     }
-    r1 = requests.post(BASE_URL + '/games', data=game_dict)
+    r1 = client.post(games_path, json=game_dict)
+    print(r1.json)
     assert r1.status_code == 201
 
-    r2 = requests.get(BASE_URL + '/games')
+    r2 = client.get(games_path)
     assert r2.status_code == 200
-    assert len(r2.json()) == 1
+    assert len(r2.json['games']) == 1
 
-    game_received = r2.json()[0]
-    r3 = requests.get(BASE_URL + '/games/' + game_received['id'])
+    game_received = r2.json['games'][0]
+    r3 = client.get(games_path + '/' + game_received['name'])
     assert r3.status_code == 200
