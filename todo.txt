@@ -1,3 +1,0 @@
-Getting off the ground
-- Write an E2E/integration test for a REST endpoint.
-- Dive in until that test passes.
