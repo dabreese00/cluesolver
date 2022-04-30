@@ -12,9 +12,9 @@ def games():
 
     if request.method == 'POST':
         game_json = request.get_json()
-        name = game_json['name']
-
-        if not name:
+        try:
+            name = game_json['name']
+        except KeyError:
             response = ({'error': 'Game name is required.'}, 401)
 
         if response is None:
