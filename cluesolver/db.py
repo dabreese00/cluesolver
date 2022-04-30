@@ -4,7 +4,7 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 
-from cluesolver.orm import create_tables, drop_tables
+from cluesolver.orm import mapper_registry
 
 
 def get_db_engine():
@@ -36,8 +36,8 @@ def close_db(e=None):
 def init_db():
     engine = get_db_engine()
 
-    drop_tables(engine)
-    create_tables(engine)
+    mapper_registry.metadata.drop_all(engine, checkfirst=True)
+    mapper_registry.metadata.create_all(engine)
 
 
 @click.command('init-db')

@@ -42,11 +42,3 @@ def map_orm():
                                     order_by=player_table.c.id)
         }
     )
-
-
-def drop_tables(engine):
-    mapper_registry.metadata.drop_all(engine, checkfirst=True)
-
-
-def create_tables(engine):
-    mapper_registry.metadata.create_all(engine)
