@@ -1,4 +1,4 @@
-from ..cluegame import Game, Card, Player
+from ...cluegame import Game, Card, Player
 import pytest
 
 
