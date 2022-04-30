@@ -1,5 +1,6 @@
 Feature roadmap:
 - Initiative: Clue Solver MVP
+  - Epic: REST API
   - Epic: CRUD with business rules
     - Story: I want to be able to record the clue facts I've observed, so I can look them up later.
     - Story: I want to be able to visualize all the clue facts I've recorded, so I can remember them.
