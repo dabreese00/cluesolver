@@ -21,7 +21,7 @@ class Player:
         self.known_cards_not_held: List[Card] = []
         self.shown_cardsets: List[Set[Card]] = []
 
-    def known_holding_status(self, card: Card):
+    def known_holding_status(self, card: Card) -> str:
         if card in self.known_cards_held:
             return "Yes"
         if card in self.known_cards_not_held:
@@ -50,7 +50,7 @@ class Game:
         self.players = players
         self.confidential_file: Set[Card] = set()
 
-    def card_list(self, card_type: str):
+    def card_list(self, card_type: str) -> List[Card]:
         return [card for card in self.cards if card.card_type == card_type]
 
     def observe_pass(self, player: Player, cardset: Set[Card]):
@@ -63,7 +63,7 @@ class Game:
     def observe_has(self, player: Player, card: Card):
         player.has(card, self)
 
-    def known_to_be_in_a_players_hand(self, card: Card):
+    def known_to_be_in_a_players_hand(self, card: Card) -> bool:
         for player in self.players:
             if card in player.known_cards_held:
                 return True
