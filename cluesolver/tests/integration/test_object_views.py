@@ -1,13 +1,15 @@
+from typing import Dict, Any
+
 from sqlalchemy import select, insert
 
 from cluesolver.db import get_db
 
 
 class ObjectViewBase():
-    relative_url = None
-    post_dict = None
-    model = None
-    list_key = None
+    relative_url: str = ''
+    post_dict: Dict[str, Any] = {}
+    model: Any = None
+    list_key: str = ''
 
     def post(self, client, json):
         return client.post(self.relative_url, json=json)
