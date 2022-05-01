@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import List, Set, Optional
 from dataclasses import dataclass
 
@@ -30,17 +28,17 @@ class Player:
             return "No"
         return "Maybe"
 
-    def has(self, card: Card, game: Game):
+    def has(self, card: Card, game: 'Game'):
         if self.known_holding_status(card) == "Maybe":
             self.known_cards_held.append(card)
             em.emit('has', game=game, player=self, card=card)
 
-    def lacks(self, card: Card, game: Game):
+    def lacks(self, card: Card, game: 'Game'):
         if self.known_holding_status(card) == "Maybe":
             self.known_cards_not_held.append(card)
             em.emit('lacks', game=game, player=self, card=card)
 
-    def shows(self, cardset: Set[Card], game: Game):
+    def shows(self, cardset: Set[Card], game: 'Game'):
         self.shown_cardsets.append(cardset)
         em.emit('shown', game=game, player=self)
 
