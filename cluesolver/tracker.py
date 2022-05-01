@@ -1,5 +1,7 @@
+from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request
-from .db import get_db
+
+from cluesolver.db import get_db
 
 
 bp = Blueprint('tracker', __name__)
@@ -20,16 +22,17 @@ def games():
         if response is None:
             try:
                 db.execute(
-                    "INSERT INTO game (name) VALUES (?)", (name,)
+                    "INSERT INTO game (name) VALUES (:name)", {'name': name}
                 )
                 db.commit()
-            except db.IntegrityError:
+            except IntegrityError:
                 response = ({'error': f"Game {name} already exists."}, 401)
             else:
                 response = ({'name': name}, 201)
 
     elif request.method == 'GET':
-        games = [dict(g) for g in db.execute("SELECT * FROM game").fetchall()]
+        games = [dict(g) for g in
+                 db.execute("SELECT name FROM game").fetchall()]
         response = ({'games': games}, 200)
 
     return response
@@ -40,13 +43,44 @@ def game_detail(name):
     db = get_db()
 
     game = db.execute(
-        "SELECT * FROM game WHERE game.name = ?",
-        (name,)
+        "SELECT * FROM game WHERE game.name = :name",
+        {'name': name}
     ).fetchone()
 
     if game is not None:
         response = ({'name': name}, 200)
     else:
         response = ({}, 404)
+
+    return response
+
+
+@bp.route('/players', methods=['POST'])
+def players():
+    db = get_db()
+    response = None
+
+    if request.method == 'POST':
+        player_json = request.get_json()
+        for attribute in ['name', 'game_id']:
+            if attribute not in player_json.keys():
+                response = ({'error': f'Player {attribute} is required.'}, 401)
+
+        if response is None:
+            try:
+                db.execute(
+                    """INSERT INTO player (name, game_id, hand_size)
+                    VALUES (:name, :game_id, :hand_size)""",
+                    player_json
+                )
+                db.commit()
+            except IntegrityError:
+                response = (
+                    {'error': "Player {} already exists.".
+                     format(player_json['name'])},
+                    401
+                )
+            else:
+                response = ({'name': player_json['name']}, 201)
 
     return response

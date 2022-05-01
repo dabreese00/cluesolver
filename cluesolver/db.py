@@ -1,33 +1,43 @@
-import sqlite3
-
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 
+from cluesolver.orm import mapper_registry
+
+
+def get_db_engine():
+    if 'db_engine' not in g:
+        g.db_engine = create_engine(current_app.config['DATABASE'])
+
+    return g.db_engine
+
 
 def get_db():
+    engine = get_db_engine()
     if 'db' not in g:
-        g.db = sqlite3.connect(
-            current_app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
+        g.db = Session(engine)
 
     return g.db
 
 
 def close_db(e=None):
     db = g.pop('db', None)
+    db_engine = g.pop('db_engine', None)
 
     if db is not None:
         db.close()
 
+    if db_engine is not None:
+        db_engine.dispose()
+
 
 def init_db():
-    db = get_db()
+    engine = get_db_engine()
 
-    with current_app.open_resource('schema.sql') as f:
-        db.executescript(f.read().decode('utf8'))
+    mapper_registry.metadata.drop_all(engine, checkfirst=True)
+    mapper_registry.metadata.create_all(engine)
 
 
 @click.command('init-db')

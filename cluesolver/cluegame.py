@@ -6,7 +6,8 @@ em = events.EventEmitter()
 
 
 class Game:
-    def __init__(self, cards, players):
+    def __init__(self, name, cards, players):
+        self.name = name
         self.cards = cards
         self.players = players
         self.confidential_file = set()
@@ -109,7 +110,7 @@ def resolve_hand_size_rule(game, player, card=None):
             player.has(c, game)
 
 
-@dataclass(frozen=True)
+@dataclass(unsafe_hash=True)
 class Card:
     name: str
     card_type: str
