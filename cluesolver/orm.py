@@ -21,6 +21,7 @@ player_table = Table(
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('name', String(30), nullable=False, unique=True),
     Column('game_id', Integer, ForeignKey("game.id"), nullable=False),
+    Column('hand_size', Integer),
 )
 
 

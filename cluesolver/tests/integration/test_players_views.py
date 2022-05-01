@@ -1,48 +1,27 @@
 import pytest
+from sqlalchemy import select
+
+from cluesolver.cluegame import Player
+from cluesolver.db import get_db
+
+from cluesolver.tests.integration.test_object_views import ObjectViewBase
 
 
-PLAYERS_PATH = '/players'
-
-
-@pytest.fixture
-def player_dict():
-    return {
+class TestPlayerViews(ObjectViewBase):
+    relative_url = '/players'
+    post_dict = {
         'name': 'Benji',
+        'game_id': 1,
         'hand_size': 3,
     }
+    model = Player
+    list_key = 'players'
 
+    def test_list(self):
+        pass
 
-def post_player(client, json):
-    return client.post(PLAYERS_PATH, json=json)
+    def test_get(self):
+        pass
 
-
-def get_player(client, name):
-    return client.get(PLAYERS_PATH + '/' + name)
-
-
-# def test_create_player(app, client, player_dict):
-#     r1 = post_player(client, player_dict)
-#     assert r1.status_code == 201
-#     r2 = client.get(PLAYERS_PATH)
-#     players = r2.json['players']
-#     assert len(players) == 1
-#     r3 = get_player(client, players[0]['name'])
-#     assert r3.status_code == 200
-#
-#
-# def test_create_player_returns_401_if_noname(app, client, player_dict):
-#     player_dict.pop('name')
-#     r = post_player(client, player_dict)
-#     assert r.status_code == 401
-#
-#
-# def test_create_player_twice_returns_401(app, client, player_dict):
-#     r1 = post_player(client, player_dict)
-#     assert r1.status_code == 201
-#     r2 = post_player(client, player_dict)
-#     assert r2.status_code == 401
-#
-#
-# def test_get_nonexistent_player_returns_404(app, client):
-#     r = get_player(client, 'idontexist')
-#     assert r.status_code == 404
+    def test_get_nonexistent_returns_404(self):
+        pass

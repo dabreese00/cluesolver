@@ -1,4 +1,4 @@
-test:
+unit:
 	poetry run pytest cluesolver/tests/unit
 
 cov:
@@ -8,7 +8,7 @@ cov:
 cov_html:
 	poetry run coverage html
 
-test_int:
+integration:
 	poetry run pytest cluesolver/tests/integration
 
 test_all:
