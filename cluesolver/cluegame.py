@@ -21,20 +21,21 @@ class Player:
         self.known_cards_not_held: List[Card] = []
         self.shown_cardsets: List[Set[Card]] = []
 
-    def known_holding_status(self, card: Card) -> str:
-        if card in self.known_cards_held:
-            return "Yes"
-        if card in self.known_cards_not_held:
-            return "No"
-        return "Maybe"
+    def __eq__(self, other):
+        if isinstance(other, Player):
+            return other.name == self.name
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self.name)
 
     def has(self, card: Card, game: 'Game'):
-        if self.known_holding_status(card) == "Maybe":
+        if card not in self.known_cards_held + self.known_cards_not_held:
             self.known_cards_held.append(card)
             em.emit('has', game=game, player=self, card=card)
 
     def lacks(self, card: Card, game: 'Game'):
-        if self.known_holding_status(card) == "Maybe":
+        if card not in self.known_cards_held + self.known_cards_not_held:
             self.known_cards_not_held.append(card)
             em.emit('lacks', game=game, player=self, card=card)
 
@@ -44,11 +45,21 @@ class Player:
 
 
 class Game:
-    def __init__(self, name: str, cards: List[Card], players: List[Player]):
+    def __init__(
+        self,
+        name: str,
+        cards: List[Card] = [],
+        players: List[Player] = []
+    ):
         self.name = name
         self.cards = cards
         self.players = players
         self.confidential_file: Set[Card] = set()
+
+    def __eq__(self, other):
+        if isinstance(other, Game):
+            return other.name == self.name
+        return NotImplemented
 
     def card_list(self, card_type: str) -> List[Card]:
         return [card for card in self.cards if card.card_type == card_type]

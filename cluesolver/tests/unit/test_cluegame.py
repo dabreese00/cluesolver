@@ -55,6 +55,10 @@ def basic_game(basic_card_list, basic_player_list):
     return Game("Basic game", basic_card_list, basic_player_list)
 
 
+def test_equality_with_different_type(basic_game):
+    assert basic_game != {}
+
+
 def test_card_list_filters_by_type(person_card, weapon_card, room_card):
     cards = [person_card, weapon_card]
     g = Game("g", cards, [])
@@ -74,7 +78,7 @@ def test_observing_a_pass_records_cards_not_held(basic_game):
     g.observe_pass(player, cardset)
 
     for card in cardset:
-        assert player.known_holding_status(card) == "No"
+        assert card in player.known_cards_not_held
 
 
 def test_observing_a_show_records_cardset_shown_by(basic_game):
@@ -99,7 +103,7 @@ def test_observing_a_show_with_two_unheld_cards_marks_final_has(basic_game):
     g.observe_pass(player, set(cards[:3]))
     g.observe_shown(player, set(cards[1:4]))
 
-    assert player.known_holding_status(cards[3]) == "Yes"
+    assert cards[3] in player.known_cards_held
 
 
 def test_observing_final_pass_marks_confidential_file(basic_game):
@@ -128,7 +132,7 @@ def test_observing_has_gets_recorded(basic_game):
 
     g.observe_has(player, card)
 
-    assert player.known_holding_status(card) == "Yes"
+    assert card in player.known_cards_held
 
 
 def test_observing_has_marks_card_not_held_by_others(basic_game):
@@ -138,7 +142,7 @@ def test_observing_has_marks_card_not_held_by_others(basic_game):
     g.observe_has(g.players[0], card)
 
     for p in g.players[1:]:
-        assert p.known_holding_status(card) == "No"
+        assert card in p.known_cards_not_held
 
 
 def test_observing_pass_with_show_and_unheld_card_marks_final_has(basic_game):
@@ -149,11 +153,12 @@ def test_observing_pass_with_show_and_unheld_card_marks_final_has(basic_game):
 
     g.observe_shown(player, set(cards[1:]))
 
-    assert player.known_holding_status(cards[3]) == "Maybe"
+    assert cards[3] not in (player.known_cards_held +
+                            player.known_cards_not_held)
 
     g.observe_pass(player, set(cards[:3]))
 
-    assert player.known_holding_status(cards[3]) == "Yes"
+    assert cards[3] in player.known_cards_held
 
 
 def test_observing_last_has_of_card_type_marks_confidential_file(
@@ -174,13 +179,15 @@ def test_observing_has_at_players_hand_size_marks_remaining_lacks(basic_game):
     g.observe_has(player, cards[0])
     g.observe_has(player, cards[1])
 
-    assert player.known_holding_status(cards[3]) == "Maybe"
-    assert player.known_holding_status(cards[4]) == "Maybe"
+    assert cards[3] not in (player.known_cards_held +
+                            player.known_cards_not_held)
+    assert cards[4] not in (player.known_cards_held +
+                            player.known_cards_not_held)
 
     g.observe_has(player, cards[2])
 
-    assert player.known_holding_status(cards[3]) == "No"
-    assert player.known_holding_status(cards[4]) == "No"
+    assert cards[3] in player.known_cards_not_held
+    assert cards[4] in player.known_cards_not_held
 
 
 def test_observing_lacks_at_players_hand_size_marks_remaining_has(basic_game):
@@ -193,4 +200,4 @@ def test_observing_lacks_at_players_hand_size_marks_remaining_has(basic_game):
     g.observe_pass(player, cards[6:9])
 
     for c in cards[9:12]:
-        assert player.known_holding_status(c) == "Yes"
+        assert c in player.known_cards_held
