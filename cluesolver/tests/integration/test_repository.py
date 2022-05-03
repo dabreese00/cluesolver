@@ -1,3 +1,5 @@
+import pytest
+
 from cluesolver.cluegame import Game, Player, Card
 from cluesolver.repository import SqlAlchemyRepository
 
@@ -64,7 +66,6 @@ def test_repository_can_list_games(session):
 
 def test_can_retrieve_player_via_game(session):
     game1_id = insert_game(session, "game1")
-    insert_game(session, "game2")
     insert_player(session, game1_id, "player1")
 
     repo = SqlAlchemyRepository(session)
@@ -79,7 +80,6 @@ def test_can_retrieve_player_via_game(session):
 
 def test_can_retrieve_card_via_game(session):
     game1_id = insert_game(session, "game1")
-    insert_game(session, "game2")
     insert_card(session, game1_id, "card1")
 
     repo = SqlAlchemyRepository(session)
@@ -90,3 +90,47 @@ def test_can_retrieve_card_via_game(session):
     assert retrieved == expected
     assert retrieved.card_type == expected.card_type
     assert retrieved.game == Game("game1")
+
+
+@pytest.fixture
+def repo_with_added_game(session):
+    insert_game(session, "game1")
+    repo = SqlAlchemyRepository(session)
+    game = repo.get("game1")
+    return repo, game
+
+
+def test_can_save_player_via_game(session, repo_with_added_game):
+    repo, game = repo_with_added_game
+
+    game.players.append(Player("player1", 3))
+    repo.add(game)
+    session.commit()
+
+    rows = session.execute("SELECT name, hand_size FROM player")
+
+    assert list(rows) == [("player1", 3)]
+
+
+def test_can_save_card_via_game(session, repo_with_added_game):
+    repo, game = repo_with_added_game
+
+    game.cards.append(Card("card1", "Room"))
+    repo.add(game)
+    session.commit()
+
+    rows = session.execute("SELECT name, card_type FROM card")
+
+    assert list(rows) == [("card1", "Room")]
+
+
+def test_add_updates_existing_game(session, repo_with_added_game):
+    repo, game = repo_with_added_game
+
+    game.cards.append(Card("card1", "Room"))
+    repo.add(game)
+    session.commit()
+
+    rows = session.execute("SELECT name FROM game")
+
+    assert list(rows) == [("game1",)]
