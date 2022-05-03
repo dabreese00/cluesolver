@@ -26,14 +26,16 @@ def insert_game(session, name):
 
 def insert_player(session, game_id, name):
     session.execute(
-        "INSERT INTO player (name, game_id, hand_size) VALUES (:name, :game_id, :hand_size)",
+        "INSERT INTO player (name, game_id, hand_size) "
+        "VALUES (:name, :game_id, :hand_size)",
         {'name': name, 'game_id': game_id, 'hand_size': 3}
     )
 
 
 def insert_card(session, game_id, name):
     session.execute(
-        "INSERT INTO card (name, game_id, card_type) VALUES (:name, :game_id, :card_type)",
+        "INSERT INTO card (name, game_id, card_type) "
+        "VALUES (:name, :game_id, :card_type)",
         {'name': name, 'game_id': game_id, 'card_type': 'Room'}
     )
 
@@ -47,6 +49,17 @@ def test_repository_can_retrieve_game(session):
 
     expected = Game("game1")
     assert retrieved == expected
+
+
+def test_repository_can_list_games(session):
+    insert_game(session, "game1")
+    insert_game(session, "game2")
+
+    repo = SqlAlchemyRepository(session)
+    retrieved = repo.list()
+
+    expected = [Game("game1"), Game("game2")]
+    assert set(retrieved) == set(expected)  # don't test the order returned
 
 
 def test_can_retrieve_player_via_game(session):

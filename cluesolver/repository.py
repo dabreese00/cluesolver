@@ -23,3 +23,6 @@ class SqlAlchemyRepository(AbstractRepository):
     def get(self, name):
         return (self.session.query(cluegame.Game).
                 filter_by(name=name).one())
+
+    def list(self):
+        return list(self.session.query(cluegame.Game).all())

@@ -61,6 +61,9 @@ class Game:
             return other.name == self.name
         return NotImplemented
 
+    def __hash__(self):
+        return hash(self.name)
+
     def card_list(self, card_type: str) -> List[Card]:
         return [card for card in self.cards if card.card_type == card_type]
 
