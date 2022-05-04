@@ -1,38 +1,39 @@
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import NoResultFound
 from flask import Blueprint, request
 
-from cluesolver.db import get_db
+from cluesolver.db import get_db, get_repo
+from cluesolver.cluegame import Game, Player
 
 
 bp = Blueprint('tracker', __name__)
 
 
+def serialize_game(game):
+    return {'name': game.name}
+
+
+def deserialize_game(json):
+    return Game(json['name'])
+
+
 @bp.route('/games', methods=['GET', 'POST'])
 def games():
     db = get_db()
+    repo = get_repo()
     response = None
 
     if request.method == 'POST':
-        game_json = request.get_json()
         try:
-            name = game_json['name']
+            game = deserialize_game(request.get_json())
         except KeyError:
-            response = ({'error': 'Game name is required.'}, 401)
-
-        if response is None:
-            try:
-                db.execute(
-                    "INSERT INTO game (name) VALUES (:name)", {'name': name}
-                )
-                db.commit()
-            except IntegrityError:
-                response = ({'error': f"Game {name} already exists."}, 401)
-            else:
-                response = ({'name': name}, 201)
+            response = ({'error': 'Missing parameter.'}, 401)
+        else:
+            repo.add(game)
+            db.commit()
+            response = (serialize_game(game), 201)
 
     elif request.method == 'GET':
-        games = [dict(g) for g in
-                 db.execute("SELECT name FROM game").fetchall()]
+        games = [serialize_game(g) for g in repo.list()]
         response = ({'games': games}, 200)
 
     return response
@@ -40,47 +41,47 @@ def games():
 
 @bp.route('/games/<name>')
 def game_detail(name):
-    db = get_db()
+    repo = get_repo()
 
-    game = db.execute(
-        "SELECT * FROM game WHERE game.name = :name",
-        {'name': name}
-    ).fetchone()
-
-    if game is not None:
-        response = ({'name': name}, 200)
+    try:
+        game = repo.get(name)
+    except NoResultFound as e:
+        response = ({'error': str(e)}, 404)
     else:
-        response = ({}, 404)
+        response = (serialize_game(game), 200)
 
     return response
+
+
+def serialize_player(player):
+    return {
+        'name': player.name,
+        'hand_size': player.hand_size,
+        'game_name': player.game.name,
+    }
+
+
+def deserialize_player(json):
+    return Player(json['name'], json['hand_size']), json['game_name']
 
 
 @bp.route('/players', methods=['POST'])
 def players():
     db = get_db()
+    repo = get_repo()
     response = None
 
     if request.method == 'POST':
         player_json = request.get_json()
-        for attribute in ['name', 'game_id']:
+        for attribute in ['name', 'game_name']:
             if attribute not in player_json.keys():
                 response = ({'error': f'Player {attribute} is required.'}, 401)
 
         if response is None:
-            try:
-                db.execute(
-                    """INSERT INTO player (name, game_id, hand_size)
-                    VALUES (:name, :game_id, :hand_size)""",
-                    player_json
-                )
-                db.commit()
-            except IntegrityError:
-                response = (
-                    {'error': "Player {} already exists.".
-                     format(player_json['name'])},
-                    401
-                )
-            else:
-                response = ({'name': player_json['name']}, 201)
+            player, game_name = deserialize_player(player_json)
+            [game] = [g for g in repo.list() if g.name == game_name]
+            game.players.append(player)
+            db.commit()
+            response = (serialize_player(player), 201)
 
     return response

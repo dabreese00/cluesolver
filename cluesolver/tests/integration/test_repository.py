@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy.exc import NoResultFound
 
 from cluesolver.cluegame import Game, Player, Card
 from cluesolver.repository import SqlAlchemyRepository
@@ -134,3 +135,10 @@ def test_add_updates_existing_game(session, repo_with_added_game):
     rows = session.execute("SELECT name FROM game")
 
     assert list(rows) == [("game1",)]
+
+
+def test_get_nonexistent_game_throws_noresultfound(session):
+    insert_game(session, "game1")
+    repo = SqlAlchemyRepository(session)
+    with pytest.raises(NoResultFound):
+        repo.get("game2")

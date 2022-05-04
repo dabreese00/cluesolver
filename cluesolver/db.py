@@ -5,6 +5,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 
 from cluesolver.orm import mapper_registry
+from cluesolver.repository import SqlAlchemyRepository
 
 
 def get_db_engine():
@@ -22,6 +23,14 @@ def get_db():
     return g.db
 
 
+def get_repo():
+    db = get_db()
+    if 'repo' not in g:
+        g.repo = SqlAlchemyRepository(db)
+
+    return g.repo
+
+
 def close_db(e=None):
     db = g.pop('db', None)
     db_engine = g.pop('db_engine', None)
@@ -31,6 +40,11 @@ def close_db(e=None):
 
     if db_engine is not None:
         db_engine.dispose()
+
+
+def close_repo(e=None):
+    g.pop('repo', None)
+    close_db(e)
 
 
 def init_db():
@@ -49,5 +63,5 @@ def init_db_command():
 
 
 def init_app(app):
-    app.teardown_appcontext(close_db)
+    app.teardown_appcontext(close_repo)
     app.cli.add_command(init_db_command)
