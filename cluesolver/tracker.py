@@ -57,7 +57,6 @@ def serialize_player(player):
     return {
         'name': player.name,
         'hand_size': player.hand_size,
-        'game_name': player.game.name,
     }
 
 

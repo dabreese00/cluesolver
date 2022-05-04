@@ -76,7 +76,6 @@ def test_can_retrieve_player_via_game(session):
     expected = Player("player1", 3)
     assert retrieved == expected
     assert retrieved.hand_size == expected.hand_size
-    assert retrieved.game == Game("game1")
 
 
 def test_can_retrieve_card_via_game(session):
@@ -90,7 +89,6 @@ def test_can_retrieve_card_via_game(session):
     expected = Card("card1", "Room")
     assert retrieved == expected
     assert retrieved.card_type == expected.card_type
-    assert retrieved.game == Game("game1")
 
 
 @pytest.fixture

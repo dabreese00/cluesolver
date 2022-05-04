@@ -40,9 +40,9 @@ def map_orm():
     mapper_registry.map_imperatively(cluegame.Player, player_table)
     mapper_registry.map_imperatively(
         cluegame.Game, game_table, properties={
-            'players': relationship(cluegame.Player, backref='game',
+            'players': relationship(cluegame.Player,
                                     order_by=player_table.c.id),
-            'cards': relationship(cluegame.Card, backref='game',
+            'cards': relationship(cluegame.Card,
                                   order_by=card_table.c.id),
         }
     )
