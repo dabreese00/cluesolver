@@ -1,7 +1,7 @@
 from sqlalchemy import select, insert
 
-from cluesolver.db import get_db
-from cluesolver.cluegame import Game
+from cluesolver.adapters.db import get_db
+from cluesolver.domain.cluegame import Game
 
 
 class TestGamesEndpoint():

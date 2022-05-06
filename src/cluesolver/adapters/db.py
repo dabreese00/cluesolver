@@ -4,8 +4,8 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 
-from cluesolver.orm import mapper_registry
-from cluesolver.repository import SqlAlchemyRepository
+from cluesolver.adapters.orm import mapper_registry
+from cluesolver.adapters.repository import SqlAlchemyRepository
 
 
 def get_db_engine():

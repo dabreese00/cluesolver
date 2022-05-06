@@ -1,6 +1,6 @@
 import abc
 
-import cluesolver.cluegame as cluegame
+import cluesolver.domain.cluegame as cluegame
 
 
 class AbstractRepository(abc.ABC):

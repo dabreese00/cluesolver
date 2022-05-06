@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship, registry
 
-import cluesolver.cluegame as cluegame
+import cluesolver.domain.cluegame as cluegame
 
 
 mapper_registry = registry()

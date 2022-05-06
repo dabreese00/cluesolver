@@ -24,10 +24,10 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    from . import tracker
+    from .entrypoints import tracker
     app.register_blueprint(tracker.bp)
 
-    from . import db
+    from .adapters import db
     db.init_app(app)
 
     return app

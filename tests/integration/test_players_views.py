@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy import select
 
-from cluesolver.cluegame import Player
-from cluesolver.db import get_db, get_repo
+from cluesolver.domain.cluegame import Player
+from cluesolver.adapters.db import get_db, get_repo
 
 
 def insert_game(session, name):

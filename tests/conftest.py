@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, clear_mappers
 
 from cluesolver import create_app
-from cluesolver.db import init_db
-from cluesolver.orm import mapper_registry, map_orm
+from cluesolver.adapters.db import init_db
+from cluesolver.adapters.orm import mapper_registry, map_orm
 
 
 @pytest.fixture

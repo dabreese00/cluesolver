@@ -1,8 +1,8 @@
 from sqlalchemy.exc import NoResultFound
 from flask import Blueprint, request
 
-from cluesolver.db import get_db, get_repo
-from cluesolver.cluegame import Game, Player
+from cluesolver.adapters.db import get_db, get_repo
+from cluesolver.domain.cluegame import Game, Player
 
 
 bp = Blueprint('tracker', __name__)
