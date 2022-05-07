@@ -11,7 +11,7 @@ game_table = Table(
     'game',
     mapper_registry.metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('name', String(30), nullable=False, unique=True),
+    Column('name', String(50), nullable=False, unique=True),
 )
 
 
@@ -19,7 +19,7 @@ player_table = Table(
     'player',
     mapper_registry.metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('name', String(30), nullable=False, unique=True),
+    Column('name', String(50), nullable=False, unique=True),
     Column('game_id', Integer, ForeignKey("game.id"), nullable=False),
     Column('hand_size', Integer),
 )
@@ -29,9 +29,9 @@ card_table = Table(
     'card',
     mapper_registry.metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('name', String(30), nullable=False, unique=True),
+    Column('name', String(50), nullable=False, unique=True),
     Column('game_id', Integer, ForeignKey("game.id"), nullable=False),
-    Column('card_type', String(30), nullable=False),
+    Column('card_type', String(50), nullable=False),
 )
 
 

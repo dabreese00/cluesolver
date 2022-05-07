@@ -8,14 +8,19 @@ def random_name():
     return str(uuid.uuid1())
 
 
-def test_api_returns_game():
+def test_api_returns_game(postgres_session):
     game_name = random_name()
     url = get_api_url()
 
     r = requests.post(f"{url}/games", json={'name': game_name})
 
+    [[name]] = postgres_session.execute(
+        "SELECT name FROM game"
+    )
+
     assert r.status_code == 201
     assert r.json()['name'] == game_name
+    assert name == game_name
 
 # @pytest.fixture
 # def add_game(postgres_session):

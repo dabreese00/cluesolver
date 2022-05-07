@@ -19,5 +19,5 @@ def games_endpoint():
     repo = repository.SqlAlchemyRepository(session)
     game = cluegame.Game(request.json["name"])
     repo.add(game)
-    # session.commit()
+    session.commit()
     return {"name": game.name}, 201
