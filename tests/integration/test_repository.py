@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy.exc import NoResultFound
 
-from cluesolver.cluegame import Game, Player, Card
-from cluesolver.repository import SqlAlchemyRepository
+from cluesolver.domain.cluegame import Game, Player, Card
+from cluesolver.adapters.repository import SqlAlchemyRepository
 
 
 def test_repository_can_save_a_game(session):

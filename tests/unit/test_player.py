@@ -1,6 +1,6 @@
 import pytest
 
-from cluesolver.cluegame import Player
+from cluesolver.domain.cluegame import Player
 
 
 @pytest.fixture
