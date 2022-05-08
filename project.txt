@@ -1,9 +1,10 @@
 Feature roadmap:
 - Initiative: Clue Solver MVP
   - Epic: REST API
-  - Epic: CRUD with business rules
+    - Story: I want to be able to create a game, with a card set, so I can keep clue facts from one playing session organized together.
+    - Story: I want to be able to add players to a game with hand sizes, so I can keep track of who's involved and what cards they might have.
     - Story: I want to be able to record the clue facts I've observed, so I can look them up later.
-    - Story: I want to be able to visualize all the clue facts I've recorded, so I can remember them.
+    - Story: I want to be able to view an existing game's recorded status and details, including players and cards details, so I can use the info to help me make guesses in Clue.
     - Story: I want to be able to see the logical inferences that can be drawn from the clue facts I've recorded, so I can deduce the answer to the game.
     - Story: I want to be notified if I try to record a logically impossible clue fact, so that I don't mess up.
 
