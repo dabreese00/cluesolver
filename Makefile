@@ -1,14 +1,16 @@
-unit:
-	poetry run pytest tests/unit
+all: down build up test
 
-integration:
-	poetry run pytest tests/integration
+build:
+	docker-compose build
 
-e2e:
-	poetry run pytest tests/e2e
+up:
+	docker-compose up -d app
 
-test_all:
+test:
 	poetry run pytest
+
+down:
+	docker-compose down
 
 cov:
 	poetry run coverage run -m pytest
