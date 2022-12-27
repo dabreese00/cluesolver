@@ -33,7 +33,6 @@ def test_api_post_game_is_saved(postgres_session):
     assert name == game_name
 
 
-@pytest.mark.xfail
 def test_api_get_returns_games(postgres_session):
     game_name = random_name()
     game_name_two = random_name()
@@ -45,12 +44,14 @@ def test_api_get_returns_games(postgres_session):
     postgres_session.execute(
         "INSERT INTO game (name) VALUES (:name)", {'name': game_name_two}
     )
+    postgres_session.commit()
 
     r = requests.get(f"{url}/games")
 
+    assert r.status_code == 200
+
     names = [entry['name'] for entry in r.json()]
 
-    assert r.status_code == 200
     assert game_name in names
     assert game_name_two in names
 
@@ -78,11 +79,9 @@ def test_api_deletes_game(postgres_session):
     postgres_session.execute(
         "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
     )
-    [[game_id]] = postgres_session.execute(
-        "SELECT id FROM game WHERE name = :name", {'name': game_name}
-    )
+    postgres_session.commit()
 
-    r = requests.delete(f"{url}/games/{game_id}")
+    r = requests.delete(f"{url}/games/{game_name}")
 
     assert r.status_code == 204
 

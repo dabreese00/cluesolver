@@ -25,6 +25,14 @@ def create_game():
     return {"name": game.name}, 201
 
 
+@app.route("/games", methods=["GET"])
+def list_games():
+    session = get_session()
+    repo = repository.SqlAlchemyRepository(session)
+    games = [{"name": game.name} for game in repo.list()]
+    return games
+
+
 @app.route("/games/<game_name>", methods=["GET"])
 def get_game(game_name):
     session = get_session()
