@@ -58,3 +58,19 @@ def create_card(game_name):
             session.commit()
             return {'name': card.name, 'card_type': card.card_type}, 201
     return {}, 400
+
+
+@app.route("/games/<game_name>/players", methods=["POST"])
+def create_player(game_name):
+    session = get_session()
+    repo = repository.SqlAlchemyRepository(session)
+    games = repo.list()
+    for game in games:
+        if game.name == escape(game_name):
+            player = cluegame.Player(
+                                     name=request.json['name'],
+                                     hand_size=request.json['hand_size'])
+            game.players.append(player)
+            session.commit()
+            return {'name': player.name, 'hand_size': player.hand_size}, 201
+    return {}, 400

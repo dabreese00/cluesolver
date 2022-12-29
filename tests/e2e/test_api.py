@@ -1,6 +1,7 @@
 import uuid
 import requests
 import pytest
+from random import randrange
 
 from cluesolver.config import get_api_url
 
@@ -152,3 +153,51 @@ def test_api_post_saves_card(postgres_session):
 
     assert name == card_json['name']
     assert card_type == card_json['card_type']
+
+
+def test_api_post_returns_player(postgres_session):
+    game_name = random_name()
+    player_json = {'name': random_name(), 'hand_size': randrange(9)}
+    url = get_api_url()
+
+    postgres_session.execute(
+        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
+    )
+    postgres_session.commit()
+
+    r = requests.post(f"{url}/games/{game_name}/players", json=player_json)
+
+    assert r.status_code == 201
+    assert r.json()['name'] == player_json['name']
+    assert r.json()['hand_size'] == player_json['hand_size']
+
+
+def test_api_post_player_to_nonexistent_game_returns_400(postgres_session):
+    game_name = random_name()
+    player_json = {'name': random_name(), 'hand_size': randrange(9)}
+    url = get_api_url()
+
+    r = requests.post(f"{url}/games/{game_name}/players", json=player_json)
+
+    assert r.status_code == 400
+
+
+def test_api_post_saves_player(postgres_session):
+    game_name = random_name()
+    player_json = {'name': random_name(), 'hand_size': randrange(9)}
+    url = get_api_url()
+
+    postgres_session.execute(
+        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
+    )
+    postgres_session.commit()
+
+    requests.post(f"{url}/games/{game_name}/players", json=player_json)
+
+    [[name, hand_size]] = postgres_session.execute(
+        "SELECT name, hand_size FROM player WHERE name=:name",
+        {'name': player_json['name']}
+    )
+
+    assert name == player_json['name']
+    assert hand_size == player_json['hand_size']
