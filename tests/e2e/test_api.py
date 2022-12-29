@@ -104,3 +104,30 @@ def test_api_deletes_game(postgres_session):
     )
 
     assert len(games) == 0
+
+
+def test_api_post_returns_card(postgres_session):
+    game_name = random_name()
+    card_json = {'name': random_name(), 'card_type': random_name()}
+    url = get_api_url()
+
+    postgres_session.execute(
+        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
+    )
+    postgres_session.commit()
+
+    r = requests.post(f"{url}/games/{game_name}/cards", json=card_json)
+
+    assert r.status_code == 201
+    assert r.json()['name'] == card_json['name']
+    assert r.json()['card_type'] == card_json['card_type']
+
+
+def test_api_post_card_to_nonexistent_game_errors(postgres_session):
+    game_name = random_name()
+    card_json = {'name': random_name(), 'card_type': random_name()}
+    url = get_api_url()
+
+    r = requests.post(f"{url}/games/{game_name}/cards", json=card_json)
+
+    assert r.status_code == 404

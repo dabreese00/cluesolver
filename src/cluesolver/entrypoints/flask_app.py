@@ -42,3 +42,18 @@ def get_game(game_name):
     except NoResultFound as e:
         return {"message": str(e)}, 404
     return {"name": game.name}
+
+
+@app.route("/games/<game_name>/cards", methods=["POST"])
+def create_card(game_name):
+    session = get_session()
+    repo = repository.SqlAlchemyRepository(session)
+    games = repo.list()
+    for game in games:
+        if game.name == escape(game_name):
+            card = cluegame.Card(
+                                 name=request.json['name'],
+                                 card_type=request.json['card_type'])
+            game.cards.append(card)
+            return {'name': card.name, 'card_type': card.card_type}, 201
+    return {}, 404
