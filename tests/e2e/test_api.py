@@ -10,6 +10,24 @@ def random_name():
     return str(uuid.uuid1())
 
 
+def random_card_dict():
+    return {'name': random_name(), 'card_type': random_name()}
+
+
+def random_player_dict():
+    return {'name': random_name(), 'hand_size': randrange(9)}
+
+
+@pytest.fixture
+def game_in_database(postgres_session):
+    game_name = random_name()
+    postgres_session.execute(
+        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
+    )
+    postgres_session.commit()
+    return game_name
+
+
 @pytest.mark.usefixtures('postgres_session')
 def test_api_post_returns_game():
     game_name = random_name()
@@ -34,16 +52,11 @@ def test_api_post_game_is_saved(postgres_session):
     assert name == game_name
 
 
-def test_api_post_onto_single_game_returns_error(postgres_session):
-    game_name = random_name()
+def test_api_post_onto_single_game_returns_error(game_in_database):
     url = get_api_url()
 
-    postgres_session.execute(
-        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
-    )
-    postgres_session.commit()
-
-    r = requests.post(f"{url}/games/{game_name}", json={'name': game_name})
+    r = requests.post(f"{url}/games/{game_in_database}",
+                      json={'name': game_in_database})
 
     assert r.status_code == 405
 
@@ -71,53 +84,35 @@ def test_api_get_returns_games(postgres_session):
     assert game_name_two in names
 
 
-def test_api_returns_single_game(postgres_session):
-    game_name = "abc"
+def test_api_returns_single_game(game_in_database):
     url = get_api_url()
 
-    postgres_session.execute(
-        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
-    )
-    postgres_session.commit()
-
-    r = requests.get(f"{url}/games/{game_name}")
+    r = requests.get(f"{url}/games/{game_in_database}")
 
     assert r.status_code == 200
-    assert r.json()['name'] == game_name
+    assert r.json()['name'] == game_in_database
 
 
 @pytest.mark.xfail
-def test_api_deletes_game(postgres_session):
-    game_name = random_name()
+def test_api_deletes_game(game_in_database, postgres_session):
     url = get_api_url()
 
-    postgres_session.execute(
-        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
-    )
-    postgres_session.commit()
-
-    r = requests.delete(f"{url}/games/{game_name}")
+    r = requests.delete(f"{url}/games/{game_in_database}")
 
     assert r.status_code == 204
 
     games = postgres_session.execute(
-        "SELECT id FROM game WHERE name = :name", {'name': game_name}
+        "SELECT id FROM game WHERE name = :name", {'name': game_in_database}
     )
 
     assert len(games) == 0
 
 
-def test_api_post_returns_card(postgres_session):
-    game_name = random_name()
-    card_json = {'name': random_name(), 'card_type': random_name()}
+def test_api_post_returns_card(game_in_database):
+    card_json = random_card_dict()
     url = get_api_url()
 
-    postgres_session.execute(
-        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
-    )
-    postgres_session.commit()
-
-    r = requests.post(f"{url}/games/{game_name}/cards", json=card_json)
+    r = requests.post(f"{url}/games/{game_in_database}/cards", json=card_json)
 
     assert r.status_code == 201
     assert r.json()['name'] == card_json['name']
@@ -126,7 +121,7 @@ def test_api_post_returns_card(postgres_session):
 
 def test_api_post_card_to_nonexistent_game_returns_400(postgres_session):
     game_name = random_name()
-    card_json = {'name': random_name(), 'card_type': random_name()}
+    card_json = random_card_dict()
     url = get_api_url()
 
     r = requests.post(f"{url}/games/{game_name}/cards", json=card_json)
@@ -134,17 +129,11 @@ def test_api_post_card_to_nonexistent_game_returns_400(postgres_session):
     assert r.status_code == 400
 
 
-def test_api_post_saves_card(postgres_session):
-    game_name = random_name()
-    card_json = {'name': random_name(), 'card_type': random_name()}
+def test_api_post_saves_card(game_in_database, postgres_session):
+    card_json = random_card_dict()
     url = get_api_url()
 
-    postgres_session.execute(
-        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
-    )
-    postgres_session.commit()
-
-    requests.post(f"{url}/games/{game_name}/cards", json=card_json)
+    requests.post(f"{url}/games/{game_in_database}/cards", json=card_json)
 
     [[name, card_type]] = postgres_session.execute(
         "SELECT name, card_type FROM card WHERE name=:name",
@@ -155,17 +144,12 @@ def test_api_post_saves_card(postgres_session):
     assert card_type == card_json['card_type']
 
 
-def test_api_post_returns_player(postgres_session):
-    game_name = random_name()
-    player_json = {'name': random_name(), 'hand_size': randrange(9)}
+def test_api_post_returns_player(game_in_database):
+    player_json = random_player_dict()
     url = get_api_url()
 
-    postgres_session.execute(
-        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
-    )
-    postgres_session.commit()
-
-    r = requests.post(f"{url}/games/{game_name}/players", json=player_json)
+    r = requests.post(f"{url}/games/{game_in_database}/players",
+                      json=player_json)
 
     assert r.status_code == 201
     assert r.json()['name'] == player_json['name']
@@ -174,7 +158,7 @@ def test_api_post_returns_player(postgres_session):
 
 def test_api_post_player_to_nonexistent_game_returns_400(postgres_session):
     game_name = random_name()
-    player_json = {'name': random_name(), 'hand_size': randrange(9)}
+    player_json = random_player_dict()
     url = get_api_url()
 
     r = requests.post(f"{url}/games/{game_name}/players", json=player_json)
@@ -182,17 +166,12 @@ def test_api_post_player_to_nonexistent_game_returns_400(postgres_session):
     assert r.status_code == 400
 
 
-def test_api_post_saves_player(postgres_session):
-    game_name = random_name()
-    player_json = {'name': random_name(), 'hand_size': randrange(9)}
+def test_api_post_saves_player(game_in_database, postgres_session):
+    player_json = random_player_dict()
     url = get_api_url()
 
-    postgres_session.execute(
-        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
-    )
-    postgres_session.commit()
-
-    requests.post(f"{url}/games/{game_name}/players", json=player_json)
+    requests.post(f"{url}/games/{game_in_database}/players",
+                  json=player_json)
 
     [[name, hand_size]] = postgres_session.execute(
         "SELECT name, hand_size FROM player WHERE name=:name",
