@@ -55,5 +55,6 @@ def create_card(game_name):
                                  name=request.json['name'],
                                  card_type=request.json['card_type'])
             game.cards.append(card)
+            session.commit()
             return {'name': card.name, 'card_type': card.card_type}, 201
-    return {}, 404
+    return {}, 400

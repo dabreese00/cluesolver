@@ -123,11 +123,32 @@ def test_api_post_returns_card(postgres_session):
     assert r.json()['card_type'] == card_json['card_type']
 
 
-def test_api_post_card_to_nonexistent_game_errors(postgres_session):
+def test_api_post_card_to_nonexistent_game_returns_400(postgres_session):
     game_name = random_name()
     card_json = {'name': random_name(), 'card_type': random_name()}
     url = get_api_url()
 
     r = requests.post(f"{url}/games/{game_name}/cards", json=card_json)
 
-    assert r.status_code == 404
+    assert r.status_code == 400
+
+
+def test_api_post_saves_card(postgres_session):
+    game_name = random_name()
+    card_json = {'name': random_name(), 'card_type': random_name()}
+    url = get_api_url()
+
+    postgres_session.execute(
+        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
+    )
+    postgres_session.commit()
+
+    requests.post(f"{url}/games/{game_name}/cards", json=card_json)
+
+    [[name, card_type]] = postgres_session.execute(
+        "SELECT name, card_type FROM card WHERE name=:name",
+        {'name': card_json['name']}
+    )
+
+    assert name == card_json['name']
+    assert card_type == card_json['card_type']
