@@ -33,6 +33,20 @@ def test_api_post_game_is_saved(postgres_session):
     assert name == game_name
 
 
+def test_api_post_onto_single_game_returns_error(postgres_session):
+    game_name = random_name()
+    url = get_api_url()
+
+    postgres_session.execute(
+        "INSERT INTO game (name) VALUES (:name)", {'name': game_name}
+    )
+    postgres_session.commit()
+
+    r = requests.post(f"{url}/games/{game_name}", json={'name': game_name})
+
+    assert r.status_code == 405
+
+
 def test_api_get_returns_games(postgres_session):
     game_name = random_name()
     game_name_two = random_name()
