@@ -43,13 +43,11 @@ def test_api_post_game_is_saved(postgres_session):
     game_name = random_name()
     url = get_api_url()
 
-    requests.post(f"{url}/games", json={'name': game_name})
+    r1 = requests.post(f"{url}/games", json={'name': game_name})
+    r2 = requests.post(f"{url}/games", json={'name': game_name})
 
-    [[name]] = postgres_session.execute(
-        "SELECT name FROM game WHERE name=:name", {'name': game_name}
-    )
-
-    assert name == game_name
+    assert r1.status_code == 201
+    assert r2.status_code == 204
 
 
 def test_api_post_onto_single_game_returns_error(game_in_database):
@@ -133,15 +131,11 @@ def test_api_post_saves_card(game_in_database, postgres_session):
     card_json = random_card_dict()
     url = get_api_url()
 
-    requests.post(f"{url}/games/{game_in_database}/cards", json=card_json)
+    r1 = requests.post(f"{url}/games/{game_in_database}/cards", json=card_json)
+    r2 = requests.post(f"{url}/games/{game_in_database}/cards", json=card_json)
 
-    [[name, card_type]] = postgres_session.execute(
-        "SELECT name, card_type FROM card WHERE name=:name",
-        {'name': card_json['name']}
-    )
-
-    assert name == card_json['name']
-    assert card_type == card_json['card_type']
+    assert r1.status_code == 201
+    assert r2.status_code == 204
 
 
 def test_api_post_returns_player(game_in_database):
@@ -170,13 +164,10 @@ def test_api_post_saves_player(game_in_database, postgres_session):
     player_json = random_player_dict()
     url = get_api_url()
 
-    requests.post(f"{url}/games/{game_in_database}/players",
-                  json=player_json)
+    r1 = requests.post(f"{url}/games/{game_in_database}/players",
+                       json=player_json)
+    r2 = requests.post(f"{url}/games/{game_in_database}/players",
+                       json=player_json)
 
-    [[name, hand_size]] = postgres_session.execute(
-        "SELECT name, hand_size FROM player WHERE name=:name",
-        {'name': player_json['name']}
-    )
-
-    assert name == player_json['name']
-    assert hand_size == player_json['hand_size']
+    assert r1.status_code == 201
+    assert r2.status_code == 204

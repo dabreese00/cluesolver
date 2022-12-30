@@ -19,6 +19,9 @@ app = Flask(__name__)
 def create_game():
     session = get_session()
     repo = repository.SqlAlchemyRepository(session)
+    games = repo.list()
+    if request.json["name"] in [g.name for g in games]:
+        return {}, 204
     game = cluegame.Game(request.json["name"])
     repo.add(game)
     session.commit()
@@ -51,6 +54,8 @@ def create_card(game_name):
     games = repo.list()
     for game in games:
         if game.name == escape(game_name):
+            if request.json['name'] in [c.name for c in game.cards]:
+                return {}, 204
             card = cluegame.Card(
                                  name=request.json['name'],
                                  card_type=request.json['card_type'])
@@ -67,6 +72,8 @@ def create_player(game_name):
     games = repo.list()
     for game in games:
         if game.name == escape(game_name):
+            if request.json['name'] in [p.name for p in game.players]:
+                return {}, 204
             player = cluegame.Player(
                                      name=request.json['name'],
                                      hand_size=request.json['hand_size'])
