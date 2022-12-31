@@ -39,7 +39,8 @@ def test_api_post_returns_game():
     assert r.json()['name'] == game_name
 
 
-def test_api_post_game_is_saved(postgres_session):
+@pytest.mark.usefixtures('postgres_session')
+def test_api_post_game_is_saved():
     game_name = random_name()
     url = get_api_url()
 
@@ -91,21 +92,6 @@ def test_api_returns_single_game(game_in_database):
     assert r.json()['name'] == game_in_database
 
 
-@pytest.mark.xfail
-def test_api_deletes_game(game_in_database, postgres_session):
-    url = get_api_url()
-
-    r = requests.delete(f"{url}/games/{game_in_database}")
-
-    assert r.status_code == 204
-
-    games = postgres_session.execute(
-        "SELECT id FROM game WHERE name = :name", {'name': game_in_database}
-    )
-
-    assert len(games) == 0
-
-
 def test_api_post_returns_card(game_in_database):
     card_json = random_card_dict()
     url = get_api_url()
@@ -117,7 +103,8 @@ def test_api_post_returns_card(game_in_database):
     assert r.json()['card_type'] == card_json['card_type']
 
 
-def test_api_post_card_to_nonexistent_game_returns_400(postgres_session):
+@pytest.mark.usefixtures('postgres_session')
+def test_api_post_card_to_nonexistent_game_returns_400():
     game_name = random_name()
     card_json = random_card_dict()
     url = get_api_url()
@@ -127,7 +114,7 @@ def test_api_post_card_to_nonexistent_game_returns_400(postgres_session):
     assert r.status_code == 400
 
 
-def test_api_post_saves_card(game_in_database, postgres_session):
+def test_api_post_saves_card(game_in_database):
     card_json = random_card_dict()
     url = get_api_url()
 
@@ -150,7 +137,8 @@ def test_api_post_returns_player(game_in_database):
     assert r.json()['hand_size'] == player_json['hand_size']
 
 
-def test_api_post_player_to_nonexistent_game_returns_400(postgres_session):
+@pytest.mark.usefixtures('postgres_session')
+def test_api_post_player_to_nonexistent_game_returns_400():
     game_name = random_name()
     player_json = random_player_dict()
     url = get_api_url()
@@ -160,7 +148,7 @@ def test_api_post_player_to_nonexistent_game_returns_400(postgres_session):
     assert r.status_code == 400
 
 
-def test_api_post_saves_player(game_in_database, postgres_session):
+def test_api_post_saves_player(game_in_database):
     player_json = random_player_dict()
     url = get_api_url()
 
