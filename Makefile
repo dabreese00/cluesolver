@@ -9,6 +9,9 @@ up:
 test:
 	poetry run pytest
 
+unit:
+	poetry run pytest tests/unit
+
 down:
 	docker-compose down
 

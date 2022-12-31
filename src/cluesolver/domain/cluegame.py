@@ -29,65 +29,61 @@ class Player:
     def __hash__(self):
         return hash(self.name)
 
-    def has(self, card: Card, game: 'Game'):
+    def has(self, card: Card):
         if card not in self.known_cards_held + self.known_cards_not_held:
             self.known_cards_held.append(card)
-            em.emit('has', game=game, player=self, card=card)
 
-    def lacks(self, card: Card, game: 'Game'):
+    def lacks(self, card: Card):
         if card not in self.known_cards_held + self.known_cards_not_held:
             self.known_cards_not_held.append(card)
-            em.emit('lacks', game=game, player=self, card=card)
 
-    def shows(self, cardset: Set[Card], game: 'Game'):
+    def shows(self, cardset: Set[Card]):
         self.shown_cardsets.append(cardset)
-        em.emit('shown', game=game, player=self)
 
-
-class Game:
-    def __init__(
-        self,
-        name: str,
-        cards: List[Card] = [],
-        players: List[Player] = []
-    ):
-        self.name = name
-        self.cards = cards
-        self.players = players
-        self.confidential_file: Set[Card] = set()
-
-    def __eq__(self, other):
-        if isinstance(other, Game):
-            return other.name == self.name
-        return NotImplemented
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def card_list(self, card_type: str) -> List[Card]:
-        return [card for card in self.cards if card.card_type == card_type]
-
-    def observe_pass(self, player: Player, cardset: Set[Card]):
+    def passes(self, cardset: Set[Card]):
         for card in cardset:
-            player.lacks(card, self)
+            self.lacks(card)
 
-    def observe_shown(self, player: Player, cardset: Set[Card]):
-        player.shows(cardset, self)
 
-    def observe_has(self, player: Player, card: Card):
-        player.has(card, self)
+def is_known_to_be_in_a_players_hand(players, card):
+    for player in players:
+        if card in player.known_cards_held:
+            return True
+    return False
 
-    def known_to_be_in_a_players_hand(self, card: Card) -> bool:
-        for player in self.players:
-            if card in player.known_cards_held:
-                return True
-        return False
+
+def list_cards_by_type(cards, card_type):
+    return [card for card in cards if card.card_type == card_type]
+
+
+def calculate_deductions(players, cards, confidential_file):
+    confidential_file = set()
+    for player in players:
+        for card in player.known_cards_held:
+            em.emit(
+                'has', players=players, cards=cards,
+                confidential_file=confidential_file,
+                player=player, card=card
+            )
+        for card in player.known_cards_not_held:
+            em.emit(
+                'lacks', players=players, cards=cards,
+                confidential_file=confidential_file,
+                player=player, card=card
+            )
+        for cardset in player.shown_cardsets:
+            em.emit(
+                'shown', players=players, cards=cards,
+                confidential_file=confidential_file,
+                player=player
+            )
+    return confidential_file
 
 
 @events.on(emitter=em, event='shown')
 @events.on(emitter=em, event='lacks')
 def resolve_show_elimination_rule(
-    game: Game,
+    players, cards, confidential_file,
     player: Player,
     card: Optional[Card] = None
 ):
@@ -95,57 +91,57 @@ def resolve_show_elimination_rule(
         possible_cards = [c for c in cardset if
                           c not in player.known_cards_not_held]
         if len(possible_cards) == 1:
-            player.has(possible_cards.pop(), game)
+            player.has(possible_cards.pop())
 
 
 @events.on(emitter=em, event='lacks')
 def resolve_at_least_one_holder_rule(
-    game: Game,
+    players, cards, confidential_file,
     card: Card,
     player: Optional[Player] = None
 ):
-    for player in game.players:
+    for player in players:
         if card not in player.known_cards_not_held:
             return
-    game.confidential_file.add(card)
+    confidential_file.add(card)
 
 
 @events.on(emitter=em, event='has')
 def resolve_at_most_one_holder_rule(
-    game: Game,
+    players, cards, confidential_file,
     player: Player,
     card: Card
 ):
     if card in player.known_cards_held:
-        for p in set(game.players) - {player}:
-            p.lacks(card, game)
+        for p in set(players) - {player}:
+            p.lacks(card)
 
 
 @events.on(emitter=em, event='has')
 def resolve_file_has_a_full_set_rule(
-    game: Game,
+    players, cards, confidential_file,
     card: Card,
     player: Optional[Player] = None
 ):
-    unlocated_cards = [c for c in game.card_list(card.card_type) if
-                       not game.known_to_be_in_a_players_hand(c)]
+    unlocated_cards = [c for c in list_cards_by_type(cards, card.card_type) if
+                       not is_known_to_be_in_a_players_hand(players, c)]
     if len(unlocated_cards) == 1:
-        game.confidential_file.add(unlocated_cards.pop())
+        confidential_file.add(unlocated_cards.pop())
 
 
 @events.on(emitter=em, event='has')
 @events.on(emitter=em, event='lacks')
 def resolve_hand_size_rule(
-    game: Game,
+    players, cards, confidential_file,
     player: Player,
     card: Optional[Card] = None
 ):
-    cards_having = [c for c in game.cards if c in player.known_cards_held]
-    cards_lacking = [c for c in game.cards if c in player.known_cards_not_held]
+    cards_having = [c for c in cards if c in player.known_cards_held]
+    cards_lacking = [c for c in cards if c in player.known_cards_not_held]
 
     if len(cards_having) == player.hand_size:
-        for c in set(game.cards) - set(cards_having):
-            player.lacks(c, game)
-    elif len(game.cards) - len(cards_lacking) == player.hand_size:
-        for c in set(game.cards) - set(cards_lacking):
-            player.has(c, game)
+        for c in set(cards) - set(cards_having):
+            player.lacks(c)
+    elif len(cards) - len(cards_lacking) == player.hand_size:
+        for c in set(cards) - set(cards_lacking):
+            player.has(c)
